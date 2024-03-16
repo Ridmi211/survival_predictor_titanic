@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <link rel="stylesheet" href="style.css">
     <title>Statistics</title>
@@ -10,36 +11,72 @@
             padding: 20px;
             line-height: 1.6;
         }
+
         h1 {
             color: #333;
             text-align: center;
         }
+
         table {
             border-collapse: collapse;
             width: 100%;
             margin-bottom: 20px;
         }
-        th, td {
+
+        th,
+        td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
         }
+
         th {
             background-color: #f2f2f2;
         }
+
         .statistics {
             max-width: 800px;
             margin: 0 auto;
         }
+
         .statistics h2 {
             margin-top: 40px;
         }
+
         .statistics table {
             margin-bottom: 40px;
         }
+
+        .navbar {
+            background-color: #333;
+            overflow: hidden;
+        }
+
+        .navbar a {
+            float: left;
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 20px;
+            text-decoration: none;
+        }
+
+        .navbar a:hover {
+            background-color: #ddd;
+            color: black;
+        }
     </style>
 </head>
+
 <body>
+    <div class="navbar">
+        <a href="/">Home</a>
+        <a href="/alldata.html">All Data</a>
+        <a href="/statistics.html">Statistics</a>
+        <a href="/plotanalysis.html">Plot Analysis</a>
+        <a href="/eda.html">EDA Analysis</a>
+        <a href="/correlation.html">Correlation</a>
+    </div>
     <h1>Statistics</h1>
     <div class="statistics">
         <h2>Descriptive Statistics</h2>
@@ -79,4 +116,5 @@
 
     </div>
 </body>
+
 </html>
