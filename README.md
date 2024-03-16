@@ -1,6 +1,4 @@
-# survival_predictor_titan
-
-Titanic Survival Prediction Web Application
+# Titanic Survival Prediction Web Application
 
 This Flask web application allows users to predict the survival of passengers on the Titanic based on various input parameters. It also provides exploratory data analysis (EDA) and visualizations of the Titanic dataset.
 
