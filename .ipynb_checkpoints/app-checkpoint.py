@@ -2,10 +2,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from flask import Flask, request, render_template
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import accuracy_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 import seaborn as sns
+from sklearn.model_selection import train_test_split, GridSearchCV
 
 app = Flask(__name__)
 
@@ -23,8 +27,9 @@ X = df[['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']]
 y = df['Survived']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# Save PassengerId and Survived  CSV file
-df[['PassengerId', 'Survived']].to_csv('survived_passengers.csv', index=False)
+# Train a model
+model = RandomForestClassifier(random_state=42)
+model.fit(X_train, y_train)
 
 
 # Train a model
@@ -77,7 +82,6 @@ def index():
             invalid_input = True
 
     return render_template('index.html', result=result, survived_count=survived_count, invalid_input=invalid_input, record_exists=record_exists)
-
 
 
 @app.route('/alldata.html')
@@ -214,6 +218,84 @@ def correlation():
 
     return render_template('correlation.html')
 
+@app.route('/acc.html')
+def accuracy():
+    # Load the dataset
+    df = pd.read_csv('dataset.csv')
+
+    # Define features and target variable
+    X = df[['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']]
+    y = df['Survived']
+
+    # Split the data into training and validation sets
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Define preprocessing for numeric and categorical features
+    numeric_features = ['Age', 'SibSp', 'Parch', 'Fare']
+    numeric_transformer = SimpleImputer(strategy='mean')
+
+    categorical_features = ['Sex', 'Embarked']
+    categorical_transformer = OneHotEncoder(handle_unknown='ignore')
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', numeric_transformer, numeric_features),
+            ('cat', categorical_transformer, categorical_features)
+        ])
+
+    # Define the model
+    model = GradientBoostingClassifier(random_state=42)
+
+    # Define the hyperparameters to tune
+    param_grid = {
+        'preprocessor__num__strategy': ['mean', 'median'],
+        'clf__n_estimators': [50, 100, 200],
+        'clf__learning_rate': [0.1, 0.05, 0.01],
+        'clf__max_depth': [3, 4, 5]
+    }
+
+    # Define the pipeline including preprocessing
+    pipeline = Pipeline([
+        ('preprocessor', preprocessor),
+        ('clf', model)
+    ])
+
+    # Perform GridSearchCV to find the best hyperparameters
+    grid_search = GridSearchCV(pipeline, param_grid, cv=5, n_jobs=-1)
+    grid_search.fit(X_train, y_train)
+
+    # Get the best model
+    best_model = grid_search.best_estimator_
+
+    # Fit the best model on the training data
+    best_model.fit(X_train, y_train)
+
+    # Make predictions on the validation set
+    y_pred = best_model.predict(X_val)
+
+    # Calculate the accuracy
+    accuracy = accuracy_score(y_val, y_pred)
+    print(f'Accuracy: {accuracy}')
+
+    # Load the test data
+    test_data = pd.read_csv('test.csv')
+
+    # Select features for test data
+    X_test = test_data[['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']]
+
+    # Make predictions on the test data
+    test_predictions = best_model.predict(X_test)
+
+    # Create a submission DataFrame
+    submission = pd.DataFrame({
+        'PassengerId': test_data['PassengerId'],
+        'Survived': test_predictions
+    })
+
+    # Save the submission file
+    submission.to_csv('submission.csv', index=False)
+
+    return render_template('acc.html', accuracy=accuracy)
 
 
 
