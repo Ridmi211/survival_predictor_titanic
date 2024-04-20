@@ -11,9 +11,72 @@ from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 import seaborn as sns
 from sklearn.model_selection import train_test_split, GridSearchCV
 
+# app = Flask(__name__)
+
+# df = pd.read_csv('dataset.csv')
+# df['Sex'] = LabelEncoder().fit_transform(df['Sex'])
+# df['Embarked'] = LabelEncoder().fit_transform(df['Embarked'].fillna('S'))
+
+# numeric_cols = df.select_dtypes(include=[np.number]).columns
+# df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].mean())
+
+# X = df[['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']]
+# y = df['Survived']
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# model = RandomForestClassifier(random_state=42)
+# model.fit(X_train, y_train)
+
+# model = RandomForestClassifier(random_state=42)
+# model.fit(X_train, y_train)
+
+# @app.route('/', methods=['GET', 'POST'])
+# def index():
+#     survived_count = df[df['Survived'] == 1].shape[0]
+#     result = None
+#     invalid_input = False
+#     record_exists = False
+
+#     if request.method == 'POST':
+#         pclass = request.form.get('Pclass')
+#         sex = request.form.get('Sex')
+#         age = request.form.get('Age')
+#         sibsp = request.form.get('SibSp')
+#         parch = request.form.get('Parch')
+#         fare = request.form.get('Fare')
+#         embarked = request.form.get('Embarked')
+
+#         try:
+#             pclass = int(pclass)
+#             sex = 1 if sex.lower() == 'male' else 0
+#             age = float(age)
+#             sibsp = int(sibsp)
+#             parch = int(parch)
+#             fare = float(fare)
+#             embarked_dict = {'S': 2, 'C': 0, 'Q': 1}
+#             embarked = embarked_dict.get(embarked.upper(), -1)
+
+#             if embarked == -1 or pclass not in [1, 2, 3]:
+#                 raise ValueError
+
+#             record = df[(df['Pclass'] == pclass) & (df['Sex'] == sex) & (df['Age'] == age) &
+#                         (df['SibSp'] == sibsp) & (df['Parch'] == parch) & (df['Fare'] == fare) &
+#                         (df['Embarked'] == embarked)]
+
+#             if not record.empty:
+#                 record_exists = True
+#                 actual_survived = record.iloc[0]['Survived']
+#                 result = 'Survived' if actual_survived == 1 else 'Not Survived'
+#             else:
+#                 result = 'No matching record found in the dataset'
+#         except ValueError:
+#             result = 'Invalid Input'
+#             invalid_input = True
+
+#     return render_template('index.html', result=result, survived_count=survived_count, invalid_input=invalid_input, record_exists=record_exists)
 app = Flask(__name__)
 
-df = pd.read_csv('dataset.csv')
+df = pd.read_csv('train.csv')
 df['Sex'] = LabelEncoder().fit_transform(df['Sex'])
 df['Embarked'] = LabelEncoder().fit_transform(df['Embarked'].fillna('S'))
 
@@ -23,9 +86,6 @@ df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].mean())
 X = df[['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']]
 y = df['Survived']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-
-model = RandomForestClassifier(random_state=42)
-model.fit(X_train, y_train)
 
 model = RandomForestClassifier(random_state=42)
 model.fit(X_train, y_train)
@@ -59,22 +119,17 @@ def index():
             if embarked == -1 or pclass not in [1, 2, 3]:
                 raise ValueError
 
-            record = df[(df['Pclass'] == pclass) & (df['Sex'] == sex) & (df['Age'] == age) &
-                        (df['SibSp'] == sibsp) & (df['Parch'] == parch) & (df['Fare'] == fare) &
-                        (df['Embarked'] == embarked)]
+            # Prepare input data for prediction
+            input_data = np.array([[pclass, sex, age, sibsp, parch, fare, embarked]])
+            prediction = model.predict(input_data)
 
-            if not record.empty:
-                record_exists = True
-                actual_survived = record.iloc[0]['Survived']
-                result = 'Survived' if actual_survived == 1 else 'Not Survived'
-            else:
-                result = 'No matching record found in the dataset'
+            result = 'Survived' if prediction == 1 else 'Not Survived'
+
         except ValueError:
             result = 'Invalid Input'
             invalid_input = True
 
     return render_template('index.html', result=result, survived_count=survived_count, invalid_input=invalid_input, record_exists=record_exists)
-
 
 @app.route('/alldata.html')
 def all_data():
@@ -197,7 +252,7 @@ def correlation():
 
 @app.route('/acc.html')
 def accuracy():
-    df = pd.read_csv('dataset.csv')
+    df = pd.read_csv('train.csv')
 
     X = df[['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']]
     y = df['Survived']
