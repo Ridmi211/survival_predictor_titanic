@@ -14,11 +14,13 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 app = Flask(__name__)
 
 df = pd.read_csv('train.csv')
-df['Sex'] = LabelEncoder().fit_transform(df['Sex'])
-df['Embarked'] = LabelEncoder().fit_transform(df['Embarked'].fillna('S'))
-
+numeric_imputer = SimpleImputer(strategy='median')
 numeric_cols = df.select_dtypes(include=[np.number]).columns
-df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].mean())
+df[numeric_cols] = numeric_imputer.fit_transform(df[numeric_cols])
+
+label_encoder = LabelEncoder()
+df['Sex'] = label_encoder.fit_transform(df['Sex'])
+df['Embarked'] = label_encoder.fit_transform(df['Embarked'].fillna('S'))
 
 X = df[['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']]
 y = df['Survived']
@@ -26,6 +28,11 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_
 
 model = RandomForestClassifier(random_state=42)
 model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)  
+accuracy = accuracy_score(y_test, y_pred)
+
+print("Accuracy:", accuracy)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -56,7 +63,6 @@ def index():
             if embarked == -1 or pclass not in [1, 2, 3]:
                 raise ValueError
 
-            # Prepare input data for prediction
             input_data = np.array([[pclass, sex, age, sibsp, parch, fare, embarked]])
             prediction = model.predict(input_data)
 
