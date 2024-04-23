@@ -13,12 +13,14 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 
 app = Flask(__name__)
 
-df = pd.read_csv('dataset.csv')
-df['Sex'] = LabelEncoder().fit_transform(df['Sex'])
-df['Embarked'] = LabelEncoder().fit_transform(df['Embarked'].fillna('S'))
-
+df = pd.read_csv('train.csv')
+numeric_imputer = SimpleImputer(strategy='median')
 numeric_cols = df.select_dtypes(include=[np.number]).columns
-df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].mean())
+df[numeric_cols] = numeric_imputer.fit_transform(df[numeric_cols])
+
+label_encoder = LabelEncoder()
+df['Sex'] = label_encoder.fit_transform(df['Sex'])
+df['Embarked'] = label_encoder.fit_transform(df['Embarked'].fillna('S'))
 
 X = df[['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']]
 y = df['Survived']
@@ -27,8 +29,10 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_
 model = RandomForestClassifier(random_state=42)
 model.fit(X_train, y_train)
 
-model = RandomForestClassifier(random_state=42)
-model.fit(X_train, y_train)
+y_pred = model.predict(X_test)  
+accuracy = accuracy_score(y_test, y_pred)
+
+print("Accuracy:", accuracy)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -59,22 +63,16 @@ def index():
             if embarked == -1 or pclass not in [1, 2, 3]:
                 raise ValueError
 
-            record = df[(df['Pclass'] == pclass) & (df['Sex'] == sex) & (df['Age'] == age) &
-                        (df['SibSp'] == sibsp) & (df['Parch'] == parch) & (df['Fare'] == fare) &
-                        (df['Embarked'] == embarked)]
+            input_data = np.array([[pclass, sex, age, sibsp, parch, fare, embarked]])
+            prediction = model.predict(input_data)
 
-            if not record.empty:
-                record_exists = True
-                actual_survived = record.iloc[0]['Survived']
-                result = 'Survived' if actual_survived == 1 else 'Not Survived'
-            else:
-                result = 'No matching record found in the dataset'
+            result = 'Survived' if prediction == 1 else 'Not Survived'
+
         except ValueError:
             result = 'Invalid Input'
             invalid_input = True
 
     return render_template('index.html', result=result, survived_count=survived_count, invalid_input=invalid_input, record_exists=record_exists)
-
 
 @app.route('/alldata.html')
 def all_data():
@@ -197,7 +195,7 @@ def correlation():
 
 @app.route('/acc.html')
 def accuracy():
-    df = pd.read_csv('dataset.csv')
+    df = pd.read_csv('train.csv')
 
     X = df[['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']]
     y = df['Survived']
